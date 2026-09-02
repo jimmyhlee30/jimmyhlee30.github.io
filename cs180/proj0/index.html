@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CS180 - Jimmy Lee</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+    :root {
+      --paper: #f6f4ee;
+      --ink: #1c1b19;
+      --ink-soft: #55524a;
+      --rule: #d8d3c5;
+      --accent: #2b4a3f;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 18px;
+      line-height: 1.6;
+    }
+
+    .wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 6rem;
+    }
+
+    /* Header + nav, shared across every project page */
+    header.site-header {
+      margin-bottom: 3rem;
+      border-bottom: 1px solid var(--rule);
+      padding-bottom: 1.5rem;
+    }
+
+    .owner-name {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 0 0 1rem;
+    }
+
+    nav.top-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.1rem;
+    }
+
+    nav.top-nav a {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--ink-soft);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      padding-bottom: 2px;
+    }
+
+    nav.top-nav a:hover,
+    nav.top-nav a.current {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* Project title */
+    .kicker {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 600;
+      margin: 0.4rem 0 2.5rem;
+      line-height: 1.2;
+    }
+
+    section.block {
+      margin: 2.5rem 0;
+    }
+
+    section.block h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    section.block p {
+      color: var(--ink-soft);
+    }
+
+    a.download-link {
+      display: inline-block;
+      margin-top: 0.75rem;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid var(--accent);
+    }
+
+    /* Carousel */
+    .carousel {
+      margin: 1.5rem 0;
+      border: 1px solid var(--rule);
+      background: #fff;
+    }
+
+    .carousel-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      overflow: hidden;
+      background: #eae7dc;
+    }
+
+    .carousel-frame img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+
+    .carousel-frame img.active { opacity: 1; }
+
+    .carousel-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-top: 1px solid var(--rule);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.82rem;
+    }
+
+    .carousel-controls .buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .carousel-controls button {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.82rem;
+      background: none;
+      border: 1px solid var(--rule);
+      color: var(--ink);
+      padding: 0.3rem 0.7rem;
+      cursor: pointer;
+    }
+
+    .carousel-controls button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .carousel-counter {
+      color: var(--ink-soft);
+    }
+
+    footer.site-footer {
+      margin-top: 4rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--rule);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--ink-soft);
+    }
+
+    @media (max-width: 600px) {
+      body { font-size: 16.5px; }
+      h1 { font-size: 1.7rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="site-header">
+      <p class="owner-name">CS180 - Jimmy Lee</p>
+      <nav class="top-nav">
+        <a href="../proj0/index.html" class="current">Project 0</a>
+        <a href="../proj1/index.html">Project 1</a>
+        <a href="../proj2/index.html">Project 2</a>
+        <a href="../proj3/index.html">Project 3</a>
+        <a href="../proj4/index.html">Project 4</a>
+        <a href="../final_proj/index.html">Final Project</a>
+      </nav>
+    </header>
+
+    <main>
+      <div class="kicker">Project 00</div>
+      <h1>Project 0</h1>
+
+      <section class="block">
+        <h2>Part 1</h2>
+        <div class="carousel" data-images='["./media/IMG_9289.jpg","./media/IMG_9291.jpg"]'></div>
+      </section>
+
+      <section class="block">
+        <h2>Part 2</h2>
+        <div class="carousel" data-images='["./media/IMG_9384.jpg","./media/IMG_9386.jpg"]'></div>
+      </section>
+
+      <section class="block">
+        <h2>Part 3</h2>
+        <div class="carousel" data-images='["./media/dolly_zoom/IMG_9388.jpg","./media/dolly_zoom/IMG_9389.jpg","./media/dolly_zoom/IMG_9390.jpg","./media/dolly_zoom/IMG_9391.jpg","./media/dolly_zoom/IMG_9392.jpg","./media/dolly_zoom/IMG_9393.jpg","./media/dolly_zoom/IMG_9394.jpg","./media/dolly_zoom/IMG_9395.jpg","./media/dolly_zoom/IMG_9396.jpg","./media/dolly_zoom/IMG_9397.jpg"]'></div>
+        <a class="download-link" href="./media/dolly_zoom/dolly_zoom.gif" download>Click to download GIF</a>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      CS 180/280A &middot; hosted on GitHub Pages
+    </footer>
+  </div>
+
+  <script>
+    // Minimal auto-advancing image carousel with prev / pause-play / next controls.
+    function initCarousel(container) {
+      const srcs = JSON.parse(container.dataset.images || '[]');
+      if (srcs.length === 0) return;
+
+      const frame = document.createElement('div');
+      frame.className = 'carousel-frame';
+      const imgs = srcs.map((src, i) => {
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = '';
+        if (i === 0) img.classList.add('active');
+        frame.appendChild(img);
+        return img;
+      });
+
+      const controls = document.createElement('div');
+      controls.className = 'carousel-controls';
+
+      const counter = document.createElement('span');
+      counter.className = 'carousel-counter';
+
+      const buttons = document.createElement('div');
+      buttons.className = 'buttons';
+      const prevBtn = document.createElement('button');
+      prevBtn.textContent = 'Previous';
+      const playBtn = document.createElement('button');
+      playBtn.textContent = 'Pause';
+      const nextBtn = document.createElement('button');
+      nextBtn.textContent = 'Next';
+      buttons.append(prevBtn, playBtn, nextBtn);
+
+      controls.append(counter, buttons);
+      container.append(frame, controls);
+
+      let index = 0;
+      let playing = true;
+      let timer = null;
+
+      function render() {
+        imgs.forEach((img, i) => img.classList.toggle('active', i === index));
+        counter.textContent = (index + 1) + ' / ' + srcs.length;
+      }
+
+      function go(delta) {
+        index = (index + delta + srcs.length) % srcs.length;
+        render();
+      }
+
+      function play() {
+        playing = true;
+        playBtn.textContent = 'Pause';
+        clearInterval(timer);
+        timer = setInterval(() => go(1), 2200);
+      }
+
+      function pause() {
+        playing = false;
+        playBtn.textContent = 'Play';
+        clearInterval(timer);
+      }
+
+      prevBtn.addEventListener('click', () => { pause(); go(-1); });
+      nextBtn.addEventListener('click', () => { pause(); go(1); });
+      playBtn.addEventListener('click', () => (playing ? pause() : play()));
+
+      render();
+      play();
+    }
+
+    document.querySelectorAll('.carousel').forEach(initCarousel);
+  </script>
+</body>
+</html>
