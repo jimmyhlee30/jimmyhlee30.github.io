@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-"""Create explanatory figures for the Project 1 webpage."""
-
 from pathlib import Path
 
 import numpy as np

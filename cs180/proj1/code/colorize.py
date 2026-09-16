@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-"""Colorize Prokudin-Gorskii glass plates using NCC and a coarse-to-fine pyramid."""
-
 from __future__ import annotations
 
 import argparse
@@ -8,17 +6,19 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
+import skimage as sk
+import skimage.io as skio
+import skimage.transform as sktransform
 
 
 def read_gray(path: Path) -> np.ndarray:
-    """Read an 8- or 16-bit plate and return float32 intensities in [0, 1]."""
-    image = np.asarray(Image.open(path).convert("F"), dtype=np.float32)
-    maximum = image.max()
-    return image / maximum if maximum > 0 else image
+    image = skio.imread(path)
+    if image.ndim == 3:
+        image = image[..., 0]
+    return sk.img_as_float(image).astype(np.float32)
 
 
 def split_channels(plate: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """The scans are stacked vertically in blue, green, red order."""
     height = plate.shape[0] // 3
     blue = plate[:height]
     green = plate[height : 2 * height]
@@ -27,7 +27,6 @@ def split_channels(plate: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarra
 
 
 def ncc(reference: np.ndarray, moving: np.ndarray, margin: int) -> float:
-    """Normalized cross-correlation on an interior region, avoiding roll edges."""
     if margin * 2 >= min(reference.shape):
         margin = 0
     ref = reference[margin:-margin or None, margin:-margin or None]
@@ -41,7 +40,6 @@ def ncc(reference: np.ndarray, moving: np.ndarray, margin: int) -> float:
 def align_at_scale(
     moving: np.ndarray, reference: np.ndarray, center: tuple[int, int], radius: int
 ) -> tuple[int, int]:
-    """Exhaustively search a square window of row/column translations."""
     best_shift = center
     best_score = -np.inf
     margin = max(radius + 2, int(min(reference.shape) * 0.10))
@@ -55,7 +53,6 @@ def align_at_scale(
 
 
 def resize_half(image: np.ndarray) -> np.ndarray:
-    """Pillow's antialiased resize provides smoothing before downsampling."""
     height, width = image.shape
     return np.asarray(
         Image.fromarray(image).resize(
@@ -73,7 +70,6 @@ def pyramid(image: np.ndarray, smallest_side_limit: int = 350) -> list[np.ndarra
 
 
 def align_pyramid(moving: np.ndarray, reference: np.ndarray) -> tuple[int, int]:
-    """Estimate a large translation coarsely, then refine it at every scale."""
     moving_levels, reference_levels = pyramid(moving), pyramid(reference)
     shift = (0, 0)
     for level, (mov, ref) in enumerate(zip(reversed(moving_levels), reversed(reference_levels))):
@@ -95,10 +91,16 @@ def colorize(path: Path) -> tuple[np.ndarray, tuple[int, int], tuple[int, int]]:
 
 
 def save_image(image: np.ndarray, path: Path, max_width: int | None = None) -> None:
-    output = Image.fromarray(np.clip(image * 255, 0, 255).astype(np.uint8))
-    if max_width and output.width > max_width:
-        output.thumbnail((max_width, max_width * 3), Image.Resampling.LANCZOS)
-    output.save(path, quality=92)
+    output = np.clip(image, 0, 1)
+    if max_width and output.shape[1] > max_width:
+        scale = max_width / output.shape[1]
+        output = sktransform.resize(
+            output,
+            (round(output.shape[0] * scale), max_width),
+            anti_aliasing=True,
+            preserve_range=True,
+        )
+    skio.imsave(path, (output * 255).astype(np.uint8), check_contrast=False)
 
 
 def main() -> None:
