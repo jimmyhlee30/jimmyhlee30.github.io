@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project 1: Colorizing the Prokudin-Gorskii Collection</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
+    :root { --paper:#f6f4ee; --ink:#1c1b19; --ink-soft:#55524a; --rule:#d8d3c5; --accent:#2b4a3f; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font-family:'Source Serif 4', Georgia, serif; font-size:18px; line-height:1.6; }
+    .wrap { max-width:760px; margin:0 auto; padding:3rem 1.5rem 6rem; }
+    header.site-header { margin-bottom:3rem; border-bottom:1px solid var(--rule); padding-bottom:1.5rem; }
+    .owner-name { font-size:1.5rem; font-weight:600; margin:0 0 1rem; }
+    nav { display:flex; flex-wrap:wrap; gap:.4rem 1.1rem; }
+    nav a { font-family:'IBM Plex Mono',monospace; font-size:.85rem; color:var(--ink-soft); text-decoration:none; border-bottom:1px solid transparent; padding-bottom:2px; }
+    nav a:hover, nav a.current { color:var(--accent); border-color:var(--accent); }
+    .kicker, .meta, .offsets, th { font-family:'IBM Plex Mono',monospace; font-size:.8rem; letter-spacing:.02em; }
+    .kicker { color:var(--accent); }
+    h1 { font-size:2rem; font-weight:600; margin:.4rem 0 2.5rem; line-height:1.2; }
+    h2 { font-size:1.25rem; font-weight:600; margin:0 0 .5rem; }
+    section { margin:2.75rem 0; }
+    p { color:var(--ink-soft); margin:.65rem 0; }
+    .formula { margin:1.2rem 0; padding:1rem 1.1rem; border-left:2px solid var(--accent); background:#eeece4; color:var(--ink); font-style:italic; text-align:center; }
+    .callout { border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:1rem 0; margin:1.3rem 0; }
+    .gallery { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; margin-top:1.25rem; }
+    figure { margin:0; border:1px solid var(--rule); background:#fff; }
+    figure img { display:block; width:100%; aspect-ratio:1/1; object-fit:cover; }
+    figure.wide-figure { margin:1.35rem 0; }
+    figure.wide-figure img { aspect-ratio:auto; object-fit:contain; }
+    figcaption { padding:.6rem .7rem .7rem; }
+    figcaption strong { display:block; font-size:1rem; font-weight:600; }
+    .offsets { color:var(--ink-soft); margin-top:.1rem; }
+    table { width:100%; border-collapse:collapse; margin-top:1.1rem; font-size:.93rem; }
+    th, td { border-bottom:1px solid var(--rule); text-align:left; padding:.55rem .3rem; }
+    th { color:var(--accent); font-weight:500; }
+    td:nth-child(2), td:nth-child(3) { font-family:'IBM Plex Mono',monospace; font-size:.82rem; color:var(--ink-soft); }
+    code { font-family:'IBM Plex Mono',monospace; font-size:.82em; background:#eeece4; padding:.1em .25em; }
+    pre { margin:1.2rem 0; padding:1rem; overflow-x:auto; background:#eeece4; border-left:2px solid var(--accent); color:var(--ink); font-family:'IBM Plex Mono',monospace; font-size:.78rem; line-height:1.55; }
+    a.code-link { color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent); }
+    footer { margin-top:4rem; padding-top:1.5rem; border-top:1px solid var(--rule); font-family:'IBM Plex Mono',monospace; font-size:.8rem; color:var(--ink-soft); }
+    @media (max-width:600px) { body { font-size:16.5px; } h1 { font-size:1.7rem; } .gallery { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="site-header">
+      <p class="owner-name">CS180 - Jimmy Lee</p>
+      <nav>
+        <a href="../proj0/index.html">Project 0</a><a href="../proj1/index.html" class="current">Project 1</a>
+        <a href="../proj2/index.html">Project 2</a><a href="../proj3/index.html">Project 3</a>
+        <a href="../proj4/index.html">Project 4</a><a href="../final_proj/index.html">Final Project</a>
+      </nav>
+    </header>
+    <main>
+      <div class="kicker">PROJECT 01</div>
+      <h1>Images of the Russian Empire: Colorizing the Prokudin-Gorskii Photo Collection</h1>
+
+      <section>
+        <h2>Overview</h2>
+        <p>Sergei Prokudin-Gorskii photographed each scene three times through blue, green, and red filters. The digitized glass plates stored those three grayscale exposures one above another in BGR order: blue at the top, green in the middle, and red at the bottom. I divided each scan into three equal-height arrays, kept blue fixed as a reference, aligned green and red to it independently, and then stacked the shifted arrays in RGB order.</p>
+        <p>I converted every scan to floating-point values in [0, 1] before comparing it, which put JPEG and TIFF inputs on a consistent numerical scale. Because the three exposures were captured through different filters at slightly different times, directly stacking the channels created conspicuous red, green, and blue halos around buildings, trees, and other high-contrast edges. Translation alignment removed most of those halos while preserving each channel's original pixels.</p>
+        <figure class="wide-figure"><img src="media/alignment_pipeline.jpg" alt="Original Cathedral plate, unaligned RGB stack, and aligned result"><figcaption><strong>Why alignment mattered</strong><span class="offsets">The unaligned stack had colored ghosting; NCC found the two translations that removed it.</span></figcaption></figure>
+      </section>
+
+      <section>
+        <h2>Normalized cross correlation</h2>
+        <p>For every candidate displacement, I shifted the moving channel with <code>np.roll</code> and scored its similarity to blue using normalized cross correlation (NCC). NCC compared whether the two channels brightened and darkened in the same locations, rather than requiring their raw pixel values to be identical.</p>
+        <p>I centered both arrays around their means and normalized them before taking their dot product. This made the score less sensitive to each filter's overall brightness and contrast. For example, a region that appeared bright through blue but darker through red could still contribute useful structural information. I calculated NCC only on an interior region, excluding 10% around the boundary and enough extra room for the search window. This prevented black borders and pixels wrapped from one side of the image to the other by <code>np.roll</code> from deciding the result.</p>
+      </section>
+
+      <section>
+        <h2>Single scale alignment</h2>
+        <p>For the small JPEG scans, I exhaustively tested every integer row and column shift in [−15, 15]. This produced 31 × 31 = 961 candidate translations for green and another 961 for red. For each candidate, I rolled the entire moving channel, scored the valid interior against blue, and retained the displacement with the largest NCC score. I then applied that winning shift to the original resolution channel.</p>
+        <pre>best_shift = (0, 0)
+for row in range(-15, 16):
+    for col in range(-15, 16):
+        candidate = roll(moving, (row, col))
+        score = NCC(blue_interior, candidate_interior)
+        if score &gt; best_score:
+            best_score, best_shift = score, (row, col)</pre>
+        <p>I performed this search independently for green against blue and red against blue, rather than assuming the red and green exposures moved by the same amount. I evaluated the same central crop after every candidate shift, so wrapped edge pixels never influenced which translation won. The listed offsets use (row, column) order: a positive row value moved a channel down, and a positive column value moved it right.</p>
+        <div class="gallery">
+          <figure><img src="media/cathedral.jpg" alt="Colorized Cathedral"><figcaption><strong>Cathedral</strong><span class="offsets">green (5, 2) · red (12, 3)</span></figcaption></figure>
+          <figure><img src="media/monastery.jpg" alt="Colorized Monastery"><figcaption><strong>Monastery</strong><span class="offsets">green (−3, 2) · red (3, 2)</span></figcaption></figure>
+          <figure><img src="media/tobolsk.jpg" alt="Colorized Tobolsk"><figcaption><strong>Tobolsk</strong><span class="offsets">green (3, 3) · red (6, 3)</span></figcaption></figure>
+        </div>
+      </section>
+
+      <section>
+        <h2>Coarse to fine image pyramid</h2>
+        <p>The TIFF scans had displacements far beyond ±15 pixels. A large exhaustive window at full resolution would have required many NCC evaluations over millions of pixels, making alignment unnecessarily slow. Instead, I built a separate image pyramid for each channel by repeatedly reducing both dimensions by half with an antialiased resize. The resize smoothed fine detail before downsampling, and I stopped once the longest side was at most 350 pixels.</p>
+        <p>I began at the smallest level, where a ±15 search covered a large displacement in original image coordinates. At every finer level, I doubled the previous row and column estimate to account for the doubled image dimensions, then refined it in a local ±2 window. Each refinement therefore tested only 25 candidates, correcting rounding and downsampling error without repeating a broad full resolution search. I used the same pyramid limit and search windows for every image.</p>
+        <figure class="wide-figure"><img src="media/pyramid_refinement.jpg" alt="Three scales of a Church image pyramid and progressively refined alignment shifts"><figcaption><strong>Coarse to fine refinement on Church</strong><span class="offsets">A broad search found the initial answer; doubling it and searching locally recovered the full resolution shift (25, 4).</span></figcaption></figure>
+        <div class="callout meta">Offsets below are (row, column). Positive row values moved a channel downward; positive column values moved it right.</div>
+      </section>
+
+      <section>
+        <h2>Pyramid results</h2>
+        <div class="gallery">
+          <figure><img src="media/church.jpg" alt="Colorized Church"><figcaption><strong>Church</strong><span class="offsets">green (25, 4) · red (58, −4)</span></figcaption></figure>
+          <figure><img src="media/harvesters.jpg" alt="Colorized Harvesters"><figcaption><strong>Harvesters</strong><span class="offsets">green (60, 17) · red (124, 14)</span></figcaption></figure>
+          <figure><img src="media/icon.jpg" alt="Colorized Icon"><figcaption><strong>Icon</strong><span class="offsets">green (41, 17) · red (89, 23)</span></figcaption></figure>
+          <figure><img src="media/ilemselga.jpg" alt="Colorized Ilemselga"><figcaption><strong>Ilemselga</strong><span class="offsets">green (40, 7) · red (130, 11)</span></figcaption></figure>
+          <figure><img src="media/melons.jpg" alt="Colorized Melons"><figcaption><strong>Melons</strong><span class="offsets">green (82, 11) · red (178, 13)</span></figcaption></figure>
+          <figure><img src="media/religous_painting.jpg" alt="Colorized Religous Painting"><figcaption><strong>Religous painting</strong><span class="offsets">green (28, 3) · red (68, 7)</span></figcaption></figure>
+          <figure><img src="media/self_portrait.jpg" alt="Colorized Self Portrait"><figcaption><strong>Self portrait</strong><span class="offsets">green (79, 29) · red (176, 36)</span></figcaption></figure>
+          <figure><img src="media/siren.jpg" alt="Colorized Siren"><figcaption><strong>Siren</strong><span class="offsets">green (49, −6) · red (96, −25)</span></figcaption></figure>
+          <figure><img src="media/three_generations.jpg" alt="Colorized Three Generations"><figcaption><strong>Three generations</strong><span class="offsets">green (53, 14) · red (112, 11)</span></figcaption></figure>
+          <figure><img src="media/wharf.jpg" alt="Colorized Wharf"><figcaption><strong>Wharf</strong><span class="offsets">green (15, −7) · red (83, −16)</span></figcaption></figure>
+          <figure><img src="media/emir.jpg" alt="Colorized Emir of Bukhara"><figcaption><strong>Emir of Bukhara</strong><span class="offsets">green (49, 24) · red (104, 56)</span></figcaption></figure>
+        </div>
+        <p><i>Emir of Bukhara</i> was the least sharp result. The main scene was registered, but the Emir's vivid blue robe appeared bright in the blue exposure and comparatively dark in the red exposure. As a result, raw pixel NCC had less consistent detail to match than it did on architecture or landscapes, leaving faint red and cyan softness around parts of the figure.</p>
+        <table>
+          <thead><tr><th>image</th><th>green shift</th><th>red shift</th></tr></thead>
+          <tbody>
+            <tr><td>cathedral</td><td>(5, 2)</td><td>(12, 3)</td></tr><tr><td>church</td><td>(25, 4)</td><td>(58, −4)</td></tr>
+            <tr><td>emir</td><td>(49, 24)</td><td>(104, 56)</td></tr><tr><td>harvesters</td><td>(60, 17)</td><td>(124, 14)</td></tr>
+            <tr><td>icon</td><td>(41, 17)</td><td>(89, 23)</td></tr><tr><td>ilemselga</td><td>(40, 7)</td><td>(130, 11)</td></tr>
+            <tr><td>melons</td><td>(82, 11)</td><td>(178, 13)</td></tr><tr><td>monastery</td><td>(−3, 2)</td><td>(3, 2)</td></tr>
+            <tr><td>religous painting</td><td>(28, 3)</td><td>(68, 7)</td></tr><tr><td>self portrait</td><td>(79, 29)</td><td>(176, 36)</td></tr>
+            <tr><td>siren</td><td>(49, −6)</td><td>(96, −25)</td></tr><tr><td>three generations</td><td>(53, 14)</td><td>(112, 11)</td></tr>
+            <tr><td>tobolsk</td><td>(3, 3)</td><td>(6, 3)</td></tr><tr><td>wharf</td><td>(15, −7)</td><td>(83, −16)</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>Additional collection images</h2>
+        <p>I also tested the unchanged pipeline on three full BGR plate scans from the <a class="code-link" href="https://www.loc.gov/pictures/collection/prok/digitizing.html">Library of Congress collection</a>. These service size scans had smaller displacements than the course TIFFs, but I used the identical NCC metric, pyramid construction, and search parameters. They provided an independent check that the method transferred beyond the supplied course data rather than relying on per image tuning.</p>
+        <div class="gallery">
+          <figure><img src="media/v_italii.jpg" alt="Colorized Library of Congress plate 00193"><figcaption><strong>LoC plate 00193</strong><span class="offsets">green (2, 1) · red (9, 1)</span></figcaption></figure>
+          <figure><img src="media/plate_00194.jpg" alt="Colorized Library of Congress plate 00194"><figcaption><strong>LoC plate 00194</strong><span class="offsets">green (4, 2) · red (7, 4)</span></figcaption></figure>
+          <figure><img src="media/plate_00195.jpg" alt="Colorized Library of Congress plate 00195"><figcaption><strong>LoC plate 00195</strong><span class="offsets">green (4, 0) · red (17, 0)</span></figcaption></figure>
+        </div>
+      </section>
+
+    </main>
+    <footer>CS 180/280A &middot; hosted on GitHub Pages</footer>
+  </div>
+</body>
+</html>
