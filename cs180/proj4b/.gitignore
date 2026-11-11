@@ -1,0 +1,7 @@
+# The code is submitted to Gradescope only, so it is not published.
+code/
+submission/
+submission.zip
+render_page.py
+submit.sh
+.DS_Store
