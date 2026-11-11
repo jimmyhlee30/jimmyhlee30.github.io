@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project 4: Image Warping, Mosaicing, and Autostitching</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap');
+    :root { --paper:#f6f4ee; --ink:#1c1b19; --ink-soft:#55524a; --rule:#d8d3c5; --accent:#2b4a3f; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font-family:'Source Serif 4', Georgia, serif; font-size:18px; line-height:1.6; }
+    .wrap { max-width:760px; margin:0 auto; padding:3rem 1.5rem 6rem; }
+    header.site-header { margin-bottom:3rem; border-bottom:1px solid var(--rule); padding-bottom:1.5rem; }
+    .owner-name { font-size:1.5rem; font-weight:600; margin:0 0 1rem; }
+    nav { display:flex; flex-wrap:wrap; gap:.4rem 1.1rem; }
+    nav a { font-family:'IBM Plex Mono',monospace; font-size:.85rem; color:var(--ink-soft); text-decoration:none; border-bottom:1px solid transparent; padding-bottom:2px; }
+    nav a:hover, nav a.current { color:var(--accent); border-color:var(--accent); }
+    .kicker, .meta, .offsets, th { font-family:'IBM Plex Mono',monospace; font-size:.8rem; letter-spacing:.02em; }
+    .kicker { color:var(--accent); }
+    h1 { font-size:2rem; font-weight:600; margin:.4rem 0 2.5rem; line-height:1.2; }
+    h2 { font-size:1.25rem; font-weight:600; margin:0 0 .5rem; }
+    h3 { font-size:1.02rem; font-weight:600; margin:1.8rem 0 .3rem; }
+    section { margin:2.75rem 0; }
+    section.part { border-top:1px solid var(--rule); padding-top:2.2rem; }
+    p { color:var(--ink-soft); margin:.65rem 0; }
+    ul { color:var(--ink-soft); padding-left:1.2rem; }
+    li { margin:.3rem 0; }
+    .formula { margin:1.2rem 0; padding:1rem 1.1rem; border-left:2px solid var(--accent); background:#eeece4; color:var(--ink); font-style:italic; text-align:center; }
+    .callout { border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:1rem 0; margin:1.3rem 0; }
+    .gallery { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; margin-top:1.25rem; }
+    .gallery.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    figure { margin:0; border:1px solid var(--rule); background:#fff; }
+    figure img { display:block; width:100%; aspect-ratio:1/1; object-fit:cover; }
+    .gallery.natural { align-items:start; }
+    .gallery.natural figure img { aspect-ratio:auto; object-fit:contain; }
+    figure.wide-figure { margin:1.35rem 0; }
+    figure.wide-figure img { aspect-ratio:auto; object-fit:contain; }
+    figcaption { padding:.6rem .7rem .7rem; }
+    figcaption strong { display:block; font-size:1rem; font-weight:600; }
+    .offsets { display:block; color:var(--ink-soft); margin-top:.15rem; font-family:'Source Serif 4', Georgia, serif; font-size:.92rem; letter-spacing:0; line-height:1.5; }
+    table { width:100%; border-collapse:collapse; margin-top:1.1rem; font-size:.93rem; }
+    th, td { border-bottom:1px solid var(--rule); text-align:left; padding:.55rem .3rem; }
+    th { color:var(--accent); font-weight:500; }
+    td.num { font-family:'IBM Plex Mono',monospace; font-size:.82rem; color:var(--ink-soft); }
+    code { font-family:'IBM Plex Mono',monospace; font-size:.82em; background:#eeece4; padding:.1em .25em; }
+    pre { margin:1.2rem 0; padding:1rem; overflow-x:auto; background:#eeece4; border-left:2px solid var(--accent); color:var(--ink); font-family:'IBM Plex Mono',monospace; font-size:.78rem; line-height:1.55; }
+    a.code-link { color:var(--accent); text-decoration:none; border-bottom:1px solid var(--accent); }
+    footer { margin-top:4rem; padding-top:1.5rem; border-top:1px solid var(--rule); font-family:'IBM Plex Mono',monospace; font-size:.8rem; color:var(--ink-soft); }
+    @media (max-width:600px) { body { font-size:16.5px; } h1 { font-size:1.7rem; } .gallery, .gallery.three { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="site-header">
+      <p class="owner-name">CS180 - Jimmy Lee</p>
+      <nav>
+        <a href="../proj0/index.html">Project 0</a><a href="../proj1/index.html">Project 1</a>
+        <a href="../proj2/index.html">Project 2</a><a href="../proj3/index.html">Project 3</a>
+        <a href="../proj4b/index.html" class="current">Project 4</a><a href="../final_proj/index.html">Final Project</a>
+      </nav>
+    </header>
+    <main>
+      <div class="kicker">PROJECT 04 &middot; PARTS A AND B</div>
+      <h1>Image Warping, Mosaicing, and Autostitching</h1>
+      <section>
+        <h2>Overview</h2>
+        <p>In Part A, I warped photos taken from one spot into a single mosaic using homographies. In Part B, I replaced the point matching with my own pipeline: Harris corners, ANMS, MOPS-style descriptors, ratio-test matching, and RANSAC. I wrote the homography solver, both warps, the blending, and the Part B pipeline myself. I used <code>numpy</code> for linear algebra and <code>scipy</code> only for Gaussian filters, a maximum filter, and the distance transform. I did not use any built-in homography, warping, or corner detection functions.</p>
+      </section>
+
+      <section class="part">
+        <div class="kicker">PART A</div>
+        <h2>Image warping and mosaicing</h2>
+        <p>Everything in this part uses the photos below. Part B reuses them.</p>
+      </section>
+
+      <section class="part">
+        <div class="kicker">PART A.1</div>
+        <h2>Shooting the pictures</h2>
+        <p>I shot from one window and turned the phone without moving it, so the photos are related by a homography. Set 1 is two photos with about 80% overlap. Sets 2 and 3 come from a sweep of seven photos, using three of them and all seven. Sets 4 and 5 are two five-photo sweeps of a different scene, with the sun in the frame. All the sweep photos were shot in portrait, so I rotated them upright. An earlier pair (IMG_0091 and IMG_0092) did not work; see the notes at the end.</p>
+        <figure class="wide-figure"><img src="media/src_set1.jpg" alt="Set 1: two photos (IMG_0093, IMG_0094)"><figcaption><strong>Set 1: two photos (IMG_0093, IMG_0094)</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/src_set2.jpg" alt="Set 2: three photos from the sweep (IMG_0095 to IMG_0097)"><figcaption><strong>Set 2: three photos from the sweep (IMG_0095 to IMG_0097)</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/src_set3.jpg" alt="Set 3: all seven photos of the sweep (IMG_0095 to IMG_0101)"><figcaption><strong>Set 3: all seven photos of the sweep (IMG_0095 to IMG_0101)</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/src_set4.jpg" alt="Set 4: five photos of a second scene (IMG_0201 to IMG_0205)"><figcaption><strong>Set 4: five photos of a second scene (IMG_0201 to IMG_0205)</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/src_set5.jpg" alt="Set 5: five more photos of the second scene (IMG_0206 to IMG_0210)"><figcaption><strong>Set 5: five more photos of the second scene (IMG_0206 to IMG_0210)</strong></figcaption></figure>
+        
+      </section>
+
+      <section class="part">
+        <div class="kicker">PART A.2</div>
+        <h2>Recovering homographies</h2>
+        <p>A homography maps (x, y) to (x&prime;, y&prime;) with p&prime; = Hp, where H is 3&times;3 with its last entry fixed to 1. Multiplying out the denominator gives two linear equations in the eight unknowns for each correspondence:</p>
+        <div class="formula">[ x &nbsp; y &nbsp; 1 &nbsp; 0 &nbsp; 0 &nbsp; 0 &nbsp; &minus;xx&prime; &nbsp; &minus;yx&prime; ] h = x&prime;<br>[ 0 &nbsp; 0 &nbsp; 0 &nbsp; x &nbsp; y &nbsp; 1 &nbsp; &minus;xy&prime; &nbsp; &minus;yy&prime; ] h = y&prime;</div>
+        <p>I stacked these into a 2n&times;8 system A h = b and solved it with <code>np.linalg.lstsq</code>, which gives a least-squares fit when n &gt; 4. <code>computeH(im1_pts, im2_pts)</code> returns the H that sends image 1 points to image 2. On synthetic data, four exact points recovered a known H to about 1e-12.</p>
+        <p><b>Correspondences.</b> I did not click points by hand. I matched SIFT features, ran RANSAC with my own <code>computeH</code> to remove bad matches, and kept the 12 most spread-out inliers per pair (24 equations). Each numbered point lands on the same feature in both photos.</p>
+        <figure class="wide-figure"><img src="media/pts_set1.jpg" alt="Set 1 correspondences (12 points)"><figcaption><strong>Set 1 correspondences (12 points)</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/pts_set2.jpg" alt="Set 2 correspondences, first pair (12 points)"><figcaption><strong>Set 2 correspondences, first pair (12 points)</strong></figcaption></figure>
+        <p>For set 1, the first four correspondences (image 2 to image 1) give these rows of the 24-row system:</p>
+        <pre>[  470  276  1    0    0  0  -328060  -192648 ] [h1..h8]ᵀ = 698
+[    0    0  0  470  276  1  -135830   -79764 ]            = 289
+[  508  701  1    0    0  0  -386588  -533461 ]            = 761
+[    0    0  0  508  701  1  -377952  -521544 ]            = 744
+...</pre>
+        <p>The recovered homography that maps image 2 into image 1 is:</p>
+        <pre>H = [[  0.60707   0.02164   273.888 ]
+     [ -0.17828   0.83767    87.060 ]
+     [ -0.00039  -0.00002     1     ]]</pre>
+        <p>The 274 px translation matches the overlap, and the small bottom-row entries show a slight turn between the photos.</p>
+      </section>
+
+      <section class="part">
+        <div class="kicker">PART A.3</div>
+        <h2>Warping the images and rectification</h2>
+        <p>Both warps use inverse warping. I push the image corners through H to size the output, then map each output pixel back through H<sup>-1</sup> to its source location, with (0, 0) at the center of the first pixel. Pixels that map outside the source get alpha = 0.</p>
+        <ul>
+          <li><b>Nearest neighbor</b> rounds the source coordinate to the closest pixel and copies it.</li>
+          <li><b>Bilinear</b> takes the four surrounding pixels and weights them by how close the source point is to each.</li>
+        </ul>
+        <p>To test the warps, I rectified two planar rectangular walls. I read the four corners off gridded crops and mapped them to a rectangle whose width and height I chose by eye. The red outlines show the corners.</p>
+        <figure class="wide-figure"><img src="media/rect1_src.jpg" alt="Brown facade source"><figcaption><strong>Rectification 1: the brown building (IMG_0093), corners in red</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/rect1_bil.jpg" alt="Rectified brown facade, bilinear, 900 &times; 320"><figcaption><strong>Rectified brown facade, bilinear, 900 &times; 320</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/rect1_nn.jpg" alt="Rectified brown facade, nearest neighbor, 900 &times; 320"><figcaption><strong>Rectified brown facade, nearest neighbor, 900 &times; 320</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/rect2_src.jpg" alt="Red building source"><figcaption><strong>Rectification 2: the red building (IMG_0094), corners in red</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/rect2_bil.jpg" alt="Rectified brick facade, bilinear, 800 &times; 330"><figcaption><strong>Rectified brick facade, bilinear, 800 &times; 330</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/rect2_nn.jpg" alt="Rectified brick facade, nearest neighbor, 800 &times; 330"><figcaption><strong>Rectified brick facade, nearest neighbor, 800 &times; 330</strong></figcaption></figure>
+        <p>In both results the window rows are level and the columns are vertical. On the brown building, the string courses between floors are now horizontal.</p>
+        <h3>Nearest neighbor vs. bilinear</h3>
+        <p>4&times; zooms of the same region of each rectified facade (left: nearest neighbor, right: bilinear):</p>
+        <figure class="wide-figure"><img src="media/rect1_zoom.jpg" alt="Brown facade, zoomed 4&times;: nearest neighbor (left), bilinear (right)"><figcaption><strong>Brown facade, zoomed 4&times;: nearest neighbor (left), bilinear (right)</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/rect2_zoom.jpg" alt="Brick facade, zoomed 4&times;: nearest neighbor (left), bilinear (right)"><figcaption><strong>Brick facade, zoomed 4&times;: nearest neighbor (left), bilinear (right)</strong></figcaption></figure>
+        <table>
+          <tr><th>Image</th><th>Nearest neighbor</th><th>Bilinear</th></tr>
+          <tr><td>Brown facade</td><td class="num">0.023 s</td><td class="num">0.049 s</td></tr>
+          <tr><td>Brick facade</td><td class="num">0.018 s</td><td class="num">0.052 s</td></tr>
+        </table>
+        <p>Nearest neighbor is two to three times faster, since it does one lookup per pixel instead of four plus weighting. The cost is jagged, stair-step edges on window frames and floor lines. Bilinear is smooth but slightly blurrier. Both are fast at this size, so I used bilinear for everything else.</p>
+      </section>
+
+      <section class="part">
+        <div class="kicker">PART A.4</div>
+        <h2>Blending the images into a mosaic</h2>
+        <p><b>Procedure.</b> I picked a reference photo, chained the pairwise homographies to map every photo into it, sized one canvas to fit all the warped photos, and warped each onto it with bilinear interpolation. The black areas around each mosaic are outside every photo, which a planar warp cannot avoid.</p>
+        <p>For each photo, I used a weight equal to the distance transform of its border (0 at the edge, largest at the center), warped along with the photo and normalized at every pixel. I tried two blends:</p>
+        <ul>
+          <li><b>Feathering:</b> a weighted average of the photos at every pixel.</li>
+          <li><b>Two-band:</b> average a blurred copy of each photo using those weights, and take the fine detail from the photo with the largest weight at each pixel, so detail is never averaged between slightly misaligned copies.</li>
+        </ul>
+        <h3>Mosaic 1: two photos</h3>
+        <figure class="wide-figure"><img src="media/mosaic1_two_band.jpg" alt="Mosaic 1, two-band blend (IMG_0094 warped into IMG_0093)"><figcaption><strong>Mosaic 1, two-band blend (IMG_0094 warped into IMG_0093)</strong></figcaption></figure>
+        <p>This is the best result. The overlap is large, so the warp is gentle and the buildings line up across the join. The airplane trails break at the seam because the planes moved.</p>
+        <h3>Mosaic 2: three photos</h3>
+        <figure class="wide-figure"><img src="media/mosaic2_two_band.jpg" alt="Mosaic 2, two-band blend (IMG_0095 to IMG_0097, middle photo as reference)"><figcaption><strong>Mosaic 2, two-band blend (IMG_0095 to IMG_0097, middle photo as reference)</strong></figcaption></figure>
+        <p>The middle photo is the reference, so the canvas bends at the edges. I could not find a visible seam apart from the airplane trails.</p>
+        <h3>Mosaic 3: seven photos</h3>
+        <figure class="wide-figure"><img src="media/mosaic3_two_band.jpg" alt="Mosaic 3, two-band blend (IMG_0095 to IMG_0101, photo 98 as reference)"><figcaption><strong>Mosaic 3, two-band blend (IMG_0095 to IMG_0101, photo 98 as reference)</strong></figcaption></figure>
+        <p>I chained six homographies for the whole sweep. The buildings still line up, and the top and bottom edges of the canvas curve, which is the cost of warping a wide sweep onto a plane.</p>
+        <h3>Mosaic 4: five photos, new scene</h3>
+        <figure class="wide-figure"><img src="media/mosaic4_two_band.jpg" alt="Mosaic 4, two-band blend (IMG_0201 to IMG_0205, middle photo as reference)"><figcaption><strong>Mosaic 4, two-band blend (IMG_0201 to IMG_0205, middle photo as reference)</strong></figcaption></figure>
+        <p>The sun and its glow are in the frame, and a small lens-flare ring from the sun shows near the center. I could not find a visible seam in the sky or on the buildings. The canvas curves at the top and bottom, which is the cost of a wide planar mosaic.</p>
+        <h3>Mosaic 5: five photos, new scene</h3>
+        <figure class="wide-figure"><img src="media/mosaic5_two_band.jpg" alt="Mosaic 5, two-band blend (IMG_0206 to IMG_0210, middle photo as reference)"><figcaption><strong>Mosaic 5, two-band blend (IMG_0206 to IMG_0210, middle photo as reference)</strong></figcaption></figure>
+        <p>This sweep looks down the street, with the sun at the left edge. The buildings and cars line up across the joins.</p>
+        <h3>Feathering vs. two-band</h3>
+        <div class="gallery natural"><figure><img src="media/mosaic1_feather.jpg" alt="feather"><figcaption><strong>Feathering</strong></figcaption></figure><figure><img src="media/mosaic1_two_band.jpg" alt="two-band"><figcaption><strong>Two-band</strong></figcaption></figure></div>
+        <p>I could not see a clear difference between them on these photos because the alignment is already good. I kept two-band as the main result because it cannot ghost when alignment is slightly off.</p>
+      </section>
+
+
+      <section class="part">
+        <div class="kicker">PART B</div>
+        <h2>Feature matching for autostitching</h2>
+        <p>In Part A, SIFT found the points for <code>computeH</code>. In Part B, I wrote the matching pipeline myself, following Brown et al., <i>Multi-Image Matching using Multi-Scale Oriented Patches</i>, with a single scale, no rotation invariance, and no wavelets. Its output feeds the same warping and blending code.</p>
+      </section>
+
+      <section class="part">
+        <div class="kicker">PART B.1</div>
+        <h2>Harris corners and ANMS</h2>
+        <p>I took Gaussian derivatives (&sigma; = 1) and built the structure tensor with a second Gaussian (&sigma; = 1.5). The corner strength is the harmonic mean of the eigenvalues, det / trace. I kept 3&times;3 local maxima above 1% of the largest strength, ignoring a 20 px border. This gave <b>3,156 corners</b> on the first photo of set 1, bunched on high-contrast areas like windows.</p>
+        <figure class="wide-figure"><img src="media/harris_all.jpg" alt="All Harris corners (3,156) on IMG_0093"><figcaption><strong>All Harris corners (3,156) on IMG_0093</strong></figcaption></figure>
+        <p>ANMS gives each corner a radius: the distance to the nearest corner that is clearly stronger (its strength &times; 0.9 is still larger). I kept the 500 corners with the largest radii, so they spread evenly over the scene instead of piling up on the windows. For speed, I only run this on the 4,000 strongest corners, and there were fewer than that here.</p>
+        <figure class="wide-figure"><img src="media/harris_anms.jpg" alt="The 500 corners kept after ANMS"><figcaption><strong>The 500 corners kept after ANMS</strong></figcaption></figure>
+      </section>
+
+      <section class="part">
+        <div class="kicker">PART B.2</div>
+        <h2>Feature descriptors</h2>
+        <p>For each corner, I took a 40&times;40 window from the image blurred with &sigma; = 2, sampled it every 5 pixels to get an 8&times;8 patch, and normalized the patch to zero mean and unit standard deviation. This makes each value an average over a region and removes brightness and contrast differences. Corners whose window runs off the image are dropped.</p>
+        <figure class="wide-figure"><img src="media/descriptors.jpg" alt="Twelve random 40&times;40 windows and their normalized 8&times;8 descriptors"><figcaption><strong>Twelve random 40&times;40 windows and their normalized 8&times;8 descriptors</strong></figcaption></figure>
+      </section>
+
+      <section class="part">
+        <div class="kicker">PART B.3</div>
+        <h2>Feature matching</h2>
+        <p>For each descriptor in the first image, I found its two nearest neighbors in the second and kept the match only if distance 1 / distance 2 is below a threshold (Lowe's ratio test). A correct match has a clear winner. I did not read a value off Figure 6b of the paper. Instead, I tried several thresholds on set 1 and counted RANSAC inliers:</p>
+        <table>
+          <tr><th>Ratio threshold</th><th>Matches</th><th>Inliers</th><th>Inlier rate</th></tr>
+          <tr><td>0.4</td><td class="num">80</td><td class="num">80</td><td class="num">100%</td></tr>
+          <tr><td>0.5</td><td class="num">112</td><td class="num">111</td><td class="num">99%</td></tr>
+          <tr><td>0.6</td><td class="num">151</td><td class="num">148</td><td class="num">98%</td></tr>
+          <tr><td>0.7</td><td class="num">179</td><td class="num">173</td><td class="num">97%</td></tr>
+          <tr><td>0.8</td><td class="num">217</td><td class="num">199</td><td class="num">92%</td></tr>
+          <tr><td>0.9</td><td class="num">273</td><td class="num">213</td><td class="num">78%</td></tr>
+        </table>
+        <p>A higher threshold gives more matches, but a growing share are wrong. I used <b>0.6</b>, where 98% of matches are inliers. In the figure, green lines are RANSAC inliers and red lines are rejected matches. The two long lines near the top come from the airplane trails, and the red one was rejected.</p>
+        <figure class="wide-figure"><img src="media/set1_matches.jpg" alt="Set 1 matches after the ratio test (green: RANSAC inliers, red: outliers)"><figcaption><strong>Set 1 matches after the ratio test (green: RANSAC inliers, red: outliers)</strong></figcaption></figure>
+      </section>
+
+      <section class="part">
+        <div class="kicker">PART B.4</div>
+        <h2>RANSAC and automatic mosaics</h2>
+        <p>I wrote 4-point RANSAC from scratch. In each of 3,000 iterations, I computed H from four random matches using my <code>computeH</code> and counted the matches that land within 3 px of their partner. I kept the largest inlier set and refit H to it by least squares. The ratio test removes most wrong matches, so few were left to reject:</p>
+        <table>
+          <tr><th>Pair</th><th>Matches</th><th>Inliers</th></tr>
+          <tr><td>93 &rarr; 94 (set 1)</td><td class="num">151</td><td class="num">148</td></tr>
+          <tr><td>95 &rarr; 96 (sets 2 and 3)</td><td class="num">349</td><td class="num">344</td></tr>
+          <tr><td>96 &rarr; 97 (sets 2 and 3)</td><td class="num">352</td><td class="num">351</td></tr>
+          <tr><td>97 &rarr; 98</td><td class="num">365</td><td class="num">357</td></tr>
+          <tr><td>98 &rarr; 99</td><td class="num">381</td><td class="num">376</td></tr>
+          <tr><td>99 &rarr; 100</td><td class="num">369</td><td class="num">364</td></tr>
+          <tr><td>100 &rarr; 101</td><td class="num">360</td><td class="num">354</td></tr>
+          <tr><td>201 &rarr; 202 (set 4)</td><td class="num">280</td><td class="num">276</td></tr>
+          <tr><td>202 &rarr; 203 (set 4)</td><td class="num">302</td><td class="num">300</td></tr>
+          <tr><td>203 &rarr; 204 (set 4)</td><td class="num">294</td><td class="num">285</td></tr>
+          <tr><td>204 &rarr; 205 (set 4)</td><td class="num">266</td><td class="num">263</td></tr>
+          <tr><td>206 &rarr; 207 (set 5)</td><td class="num">268</td><td class="num">262</td></tr>
+          <tr><td>207 &rarr; 208 (set 5)</td><td class="num">303</td><td class="num">301</td></tr>
+          <tr><td>208 &rarr; 209 (set 5)</td><td class="num">291</td><td class="num">280</td></tr>
+          <tr><td>209 &rarr; 210 (set 5)</td><td class="num">281</td><td class="num">279</td></tr>
+        </table>
+        <p>For set 1, the automatic H is very close to the Part A H:</p>
+        <pre>Part A:  [[ 0.6071   0.0216   273.89 ]      Part B:  [[ 0.6135   0.0031   277.97 ]
+          [-0.1783   0.8377    87.06 ]               [-0.1663   0.8227    86.87 ]
+          [-0.0004  -0.0000     1    ]]              [-0.0004  -0.0000     1    ]]</pre>
+        <p>I pushed the four corners of the 1000&times;750 photo through both matrices. They land within 4, 11, and 5 px of each other at three corners and 40 px apart at the far top-right corner. That corner is farthest from the overlap, so a small difference in H grows there.</p>
+        <h3>Part A vs. Part B</h3>
+        <p>I built the same five mosaics with the same references and blend: Part A on the left, Part B on the right. <b>Note:</b> my Part A points were not clicked by hand. They came from SIFT and RANSAC, so this compares two automatic methods, not manual vs. automatic.</p>
+        <figure class="wide-figure"><img src="media/compare_set1.jpg" alt="Set 1 (two photos): Part A (left), Part B (right)"><figcaption><strong>Set 1 (two photos): Part A (left), Part B (right)</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/compare_set2.jpg" alt="Set 2 (three photos): Part A (left), Part B (right)"><figcaption><strong>Set 2 (three photos): Part A (left), Part B (right)</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/compare_set3.jpg" alt="Set 3 (seven photos): Part A (left), Part B (right)"><figcaption><strong>Set 3 (seven photos): Part A (left), Part B (right)</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/compare_set4.jpg" alt="Set 4 (five photos): Part A (left), Part B (right)"><figcaption><strong>Set 4 (five photos): Part A (left), Part B (right)</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/compare_set5.jpg" alt="Set 5 (five photos): Part A (left), Part B (right)"><figcaption><strong>Set 5 (five photos): Part A (left), Part B (right)</strong></figcaption></figure>
+        <p>The two sides look nearly the same, including on the seven-photo sweep and the new scene. The one visible difference is the canvas outline at the far right of set 1, which matches the 40 px corner difference above. The airplane trails break in both because the planes moved.</p>
+        <h3>The seven-photo sweep, matched automatically</h3>
+        <figure class="wide-figure"><img src="media/auto_set3.jpg" alt="Set 3 (seven photos), Part B alone"><figcaption><strong>Set 3 (seven photos), Part B alone</strong></figcaption></figure>
+        <figure class="wide-figure"><img src="media/set3_matches.jpg" alt="First pair of set 3: matches (green: inliers, red: outliers)"><figcaption><strong>First pair of set 3: matches (green: inliers, red: outliers)</strong></figcaption></figure>
+      </section>
+
+      <section class="part">
+        <div class="kicker">NOTES</div>
+        <h2>An attempt that did not work</h2>
+        <p>My first pair, IMG_0091 and IMG_0092, overlapped by only a third and was turned by a large angle. The 12 correspondences were fine (all implied a shift of about 650 px), but the homography stretched the far edge of the second photo about five times and the mosaic became a wide wedge, because a planar mosaic cannot represent a wide rotation. I reshot with more overlap.</p>
+      </section>
+      <section class="part">
+        <h2>What I learned</h2>
+        <p>In Part B, I learned that the early filters do most of the work. ANMS spreads the points over the overlap and the ratio test removes most wrong matches, so RANSAC had little left to remove. With 98% of matches already correct, it was almost a formality on these photos. I expect it matters more on repetitive scenes.</p>
+        <p>The shape of a mosaic depends heavily on how the photos were shot. The homography is a small least-squares problem and was correct whenever the overlap was large, but when the photos were far apart the same correct math gave a stretched, unusable result. The feather weights also matter more than the blend: once every photo fades out at its own border, the seam almost disappears.</p>
+      </section>
+    </main>
+    <footer>CS 180/280A &middot; hosted on GitHub Pages</footer>
+  </div>
+</body>
+</html>
